@@ -1,0 +1,60 @@
+version: '3.1'
+
+#docker run -it -d --name jenkins_status jenkins_status:v0.0.1
+services:
+  jenkins_status:
+    image: jenkins_status:v0.0.1
+    build: 
+      context: ../jenkins_status
+    stdin_open: true
+    tty: true
+    volumes:
+      - jenkins-config:/Jenkins-status/config
+      - jenkins-log:/Jenkins-status/log
+    depends_on:
+    - google_speech
+    - mosquito_jenkins
+  
+  google_speech:
+    privileged: true
+    image: google_speech:v0.0.1
+    build:
+      context: ../google_speech
+    ports:
+      - "5600:5600"
+
+# docker run -d -v jenkins_home:/var/jenkins_home -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts, not needed if using external jenkins server
+  docker_jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "5000:5000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+
+
+#ocker run -it -p 1883:1883 -p 9001:9001 -v mosquitto.conf:/mosquitto/config/mosquitto.conf -v /mosquitto/data -v /mosquitto/log eclipse-mosquitto
+  mosquito_jenkins:
+    image: eclipse-mosquitto
+    ports: 
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto.conf:/mosquitto/config
+      - mosquitto.log:/mosquitto/log
+      - mosquitto.data:/mosquitto/data
+
+networks:
+  default:
+    external:
+      name: jenkins-net
+
+volumes:
+  mosquitto.conf: 
+  mosquitto.log:
+  mosquitto.data:
+  jenkins-config:
+  jenkins_home:
+    external: true 
+  jenkins-log:
+
